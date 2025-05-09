@@ -1,25 +1,65 @@
+# keep_alive.py
+
+
+
 from flask import Flask
+
 from threading import Thread
 
-app = Flask(__name__)  # Il est recommandé d'utiliser __name__ pour l'initialisation de Flask.
+import requests
+
+import time
+
+
+
+app = Flask(__name__)
+
 
 
 @app.route('/')
+
 def home():
-    return "I'm alive"
+
+    return "?"
+
 
 
 def run():
-    """
-    Fonction pour démarrer l'application Flask.
-    """
-    app.run(host='0.0.0.0', port=8080)  # Le port peut être modifié selon le besoin.
+
+    app.run(host='0.0.0.0', port=8080)
+
 
 
 def keep_alive():
-    """
-    Fonction pour démarrer l'application Flask dans un thread séparé.
-    """
-    t = Thread(target=run)  # Création d'un thread pour exécuter la fonction run() en arrière-plan
-    t.daemon = True  # Définir le thread comme daemon pour qu'il s'arrête lorsque le programme principal se termine.
-    t.start()  # Lancement du thread.
+
+    t = Thread(target=run)
+
+    t.start()
+
+
+
+def self_ping():
+
+    while True:
+
+        try:
+
+            requests.get("https://aliexpress-telegram-bot-qjdv.onrender.com")  
+
+            print(" hello world ")
+
+        except:
+
+            print("fail ping")
+
+        time.sleep(60 * 3)
+
+		
+
+		
+
+		
+
+keep_alive()
+
+Thread(target=self_ping).start()		

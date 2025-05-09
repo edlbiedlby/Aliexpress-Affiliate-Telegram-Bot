@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from flask import Flask, request
 import telebot
 from telebot import types
 from aliexpress_api import AliexpressApi, models
 import re
-import requests, json
+import json
 from urllib.parse import urlparse, parse_qs, urlencode
 
-bot = telebot.TeleBot('7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU')
+TOKEN = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU'
+bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
 
 aliexpress = AliexpressApi('506592', 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh',
                            models.Language.EN, models.Currency.EUR, 'default')
@@ -65,23 +68,19 @@ def extract_link(text):
 def get_affiliate_links(message, message_id, link):
     try:
         affiliate_links = aliexpress.get_affiliate_links(link)
-
         if not affiliate_links or not hasattr(affiliate_links[0], 'promotion_link'):
             bot.delete_message(message.chat.id, message_id)
             bot.send_message(message.chat.id, "⚠️ لم أتمكن من جلب رابط العرض لهذا المنتج. تأكد من الرابط وأعد المحاولة.")
             return
 
         promo_link = affiliate_links[0].promotion_link
-
         details = aliexpress.get_products_details([link])
-
         if not details or not hasattr(details[0], 'product_title'):
             bot.delete_message(message.chat.id, message_id)
             bot.send_message(message.chat.id, "⚠️ لم أتمكن من جلب تفاصيل هذا المنتج. ربما يكون الرابط خاطئًا أو المنتج لم يعد متاحًا.")
             return
 
         product = details[0]
-
         bot.delete_message(message.chat.id, message_id)
         bot.send_photo(
             message.chat.id,
@@ -103,7 +102,6 @@ def build_shopcart_link(link):
     shopcart_ids = params.get("availableProductShopcartIds", [])
     if not shopcart_ids:
         return None
-
     shopcart_link = "https://www.aliexpress.com/p/trade/confirm.html?"
     extra = json.dumps({"channelInfo": {"sourceType": "620"}}, separators=(',', ':'))
     query = urlencode({
@@ -118,7 +116,6 @@ def get_affiliate_shopcart_link(link, message):
         if not shopcart_link:
             bot.send_message(message.chat.id, "⚠️ الرابط غير صالح للسلة.")
             return
-
         affiliate_link = aliexpress.get_affiliate_links(shopcart_link)[0].promotion_link
         img_link = "https://i.postimg.cc/HkMxWS1T/photo-5893070682508606111-y.jpg"
         bot.send_photo(message.chat.id, img_link, caption=f"✅ هذا رابط تخفيض السلة:\n{affiliate_link}")
@@ -131,7 +128,6 @@ def handle_links(message):
     if not link or "aliexpress.com" not in link:
         bot.send_message(message.chat.id, "⚠️ الرابط غير صحيح! تأكد من رابط المنتج أو أعد المحاولة.")
         return
-
     sent = bot.send_message(message.chat.id, "⏳ جاري تجهيز العروض...")
     if "availableProductShopcartIds" in link:
         get_affiliate_shopcart_link(link, message)
@@ -148,5 +144,19 @@ def send_games(call):
         reply_markup=keyboard_games
     )
 
-# Lancer le bot
-bot.infinity_polling(timeout=10, long_polling_timeout=5)
+# Flask webhook
+@app.route('/' + TOKEN, methods=['POST'])
+def getMessage():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return '!', 200
+
+@app.route('/')
+def index():
+    return 'Bot is running!', 200
+
+if __name__ == "__main__":
+    bot.remove_webhook()
+    bot.set_webhook(url='https://TON-APP-NAME.onrender.com/' + TOKEN)
+    app.run(host="0.0.0.0", port=10000)

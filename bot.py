@@ -15,11 +15,11 @@ bot = telebot.TeleBot('7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU')
 # Supprimer tout webhook actif
 bot.remove_webhook()
 
-# Initialisation de l'API AliExpress
+# Initialisation de l’API AliExpress
 aliexpress = AliexpressApi('506592', 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh',
                            models.Language.EN, models.Currency.EUR, 'default')
 
-# Création de l'application Flask
+# Création de l’application Flask
 app = Flask(__name__)
 
 # Route pour gérer les mises à jour envoyées par Telegram
@@ -31,7 +31,7 @@ def webhook():
     return "OK", 200
 
 # Configuration du webhook
-WEBHOOK_URL = 'https://providersmmpro.com/webhook'  # Remplacez par l'URL de votre webhook
+WEBHOOK_URL = 'https://providersmmpro.com/webhook'  # Remplacez par l’URL de votre webhook
 bot.set_webhook(url=WEBHOOK_URL)
 
 # Clavier de démarrage
@@ -128,7 +128,7 @@ def extract_link(text):
     if links:
         return links[0]
 
-# Construction du lien de panier d'achat
+# Construction du lien de panier d’achat
 def build_shopcart_link(link):
     params = get_url_params(link)
     shop_cart_link = "https://www.aliexpress.com/p/trade/confirm.html?"
@@ -146,7 +146,7 @@ def get_url_params(link):
 def create_query_string_url(link, params):
     return link + urlencode(params)
 
-# Gestion du lien affilié du panier d'achat
+# Gestion des liens affiliés du panier d’achat
 def get_affiliate_shopcart_link(link, message):
     try:
         shopcart_link = build_shopcart_link(link)
@@ -191,5 +191,5 @@ def handle_games_callback(call):
         reply_markup=keyboard_games)
 
 if __name__ == "__main__":
-    # Lancer l'application Flask
+    # Lancer l’application Flask
     app.run(host='0.0.0.0', port=5000)

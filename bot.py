@@ -71,7 +71,7 @@ def button_click(callback_query):
     bot.send_photo(callback_query.message.chat.id, img_link, caption=text, reply_markup=keyboard)
 
 def extract_link(text):
-    link_pattern = r'(https?://\S+|www.\S+)'
+    link_pattern = r'^(?:www\.|s\.click\.|a\.)?[\w-]*aliexpress\.(?:com|ru|es|fr|pt|it|pl|nl|co\.kr|co\.jp|com\.br|com\.tr|com\.vn|id|th|ar)'
     match = re.search(link_pattern, text)
     return match.group(0) if match else None
 

@@ -8,7 +8,7 @@ def home():
     return "Je suis vivant !"
 
 def run():
-    app.run(host='0.0.0.0', port=5000)  # Change le port à 5000, ou un autre port non utilisé.
+    app.run(host='0.0.0.0', port=0)  # port=0 dit à Flask de choisir automatiquement un port libre
 
 def keep_alive():
     t = Thread(target=run)

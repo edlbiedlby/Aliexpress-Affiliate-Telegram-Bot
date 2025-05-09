@@ -20,37 +20,6 @@ aliexpress = AliexpressApi('506592', 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh', models.
 
 
 
-# -*- coding: utf-8 -*-
-import logging
-import os
-import re
-import json
-import asyncio
-import time
-from datetime import datetime, timedelta
-import aiohttp  
-from dotenv import load_dotenv
-from urllib.parse import urlparse, urlunparse, urlencode
-import iop
-from concurrent.futures import ThreadPoolExecutor
-from aliexpress_utils import get_product_details_by_id 
-
-# Telegram imports
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes, JobQueue 
-from telegram.constants import ParseMode, ChatAction
-
-
-# --- Environment Variable Loading ---
-load_dotenv()
-
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-ALIEXPRESS_APP_KEY = os.getenv('ALIEXPRESS_APP_KEY')
-ALIEXPRESS_APP_SECRET = os.getenv('ALIEXPRESS_APP_SECRET')
-TARGET_CURRENCY = os.getenv('TARGET_CURRENCY', 'USD')
-TARGET_LANGUAGE = os.getenv('TARGET_LANGUAGE', 'en')
-QUERY_COUNTRY = os.getenv('QUERY_COUNTRY', 'US')
-ALIEXPRESS_TRACKING_ID = os.getenv('ALIEXPRESS_TRACKING_ID', 'default')
 
 # --- Basic Logging Setup ---
 logging.basicConfig(

@@ -2,20 +2,37 @@
 # coding: utf-8
 
 import telebot
-from flask import Flask
+from flask import Flask, request
 from telebot import types
 from aliexpress_api import AliexpressApi, models
 import re
-import requests, json
+import json
 from urllib.parse import urlparse, parse_qs, urlencode
 
+# Initialisation du bot Telegram
 bot = telebot.TeleBot('7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU')
 
-# Ajout important pour éviter le conflit webhook / polling :
+# Supprimer tout webhook actif
 bot.remove_webhook()
 
+# Initialisation de l'API AliExpress
 aliexpress = AliexpressApi('506592', 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh',
                            models.Language.EN, models.Currency.EUR, 'default')
+
+# Création de l'application Flask
+app = Flask(__name__)
+
+# Route pour gérer les mises à jour envoyées par Telegram
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "OK", 200
+
+# Configuration du webhook
+WEBHOOK_URL = 'https://votre-domaine.com/webhook'  # Remplacez par l'URL de votre webhook
+bot.set_webhook(url=WEBHOOK_URL)
 
 # Clavier de démarrage
 keyboardStart = types.InlineKeyboardMarkup(row_width=1)
@@ -173,5 +190,6 @@ def handle_games_callback(call):
         caption="روابط ألعاب جمع العملات المعدنية لإستعمالها في خفض السعر لبعض المنتجات، قم بالدخول يوميا لها للحصول على أكبر عدد ممكن في اليوم 👇",
         reply_markup=keyboard_games)
 
-# Lancement en mode polling (après avoir retiré tout webhook actif)
-bot.infinity_polling()
+if __name__ == "__main__":
+    # Lancer l'application Flask
+    app.run(host='0.0.0.0', port=5000)

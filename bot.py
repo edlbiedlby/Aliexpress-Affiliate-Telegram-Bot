@@ -65,9 +65,21 @@ def extract_link(text):
 def get_affiliate_links(message, message_id, link):
     try:
         affiliate_links = aliexpress.get_affiliate_links(link)
+
+        if not affiliate_links or not hasattr(affiliate_links[0], 'promotion_link'):
+            bot.delete_message(message.chat.id, message_id)
+            bot.send_message(message.chat.id, "⚠️ لم أتمكن من جلب رابط العرض لهذا المنتج. تأكد من الرابط وأعد المحاولة.")
+            return
+
         promo_link = affiliate_links[0].promotion_link
 
         details = aliexpress.get_products_details([link])
+
+        if not details or not hasattr(details[0], 'product_title'):
+            bot.delete_message(message.chat.id, message_id)
+            bot.send_message(message.chat.id, "⚠️ لم أتمكن من جلب تفاصيل هذا المنتج. ربما يكون الرابط خاطئًا أو المنتج لم يعد متاحًا.")
+            return
+
         product = details[0]
 
         bot.delete_message(message.chat.id, message_id)
@@ -83,7 +95,7 @@ def get_affiliate_links(message, message_id, link):
         )
     except Exception as e:
         bot.delete_message(message.chat.id, message_id)
-        bot.send_message(message.chat.id, f"حدث خطأ 🤷🏻‍♂️: {str(e)}")
+        bot.send_message(message.chat.id, f"⚠️ حدث خطأ 🤷🏻‍♂️: {str(e)}")
 
 def build_shopcart_link(link):
     parsed = urlparse(link)
@@ -104,20 +116,20 @@ def get_affiliate_shopcart_link(link, message):
     try:
         shopcart_link = build_shopcart_link(link)
         if not shopcart_link:
-            bot.send_message(message.chat.id, "الرابط غير صالح للسلة.")
+            bot.send_message(message.chat.id, "⚠️ الرابط غير صالح للسلة.")
             return
 
         affiliate_link = aliexpress.get_affiliate_links(shopcart_link)[0].promotion_link
         img_link = "https://i.postimg.cc/HkMxWS1T/photo-5893070682508606111-y.jpg"
-        bot.send_photo(message.chat.id, img_link, caption=f"هذا رابط تخفيض السلة:\n{affiliate_link}")
+        bot.send_photo(message.chat.id, img_link, caption=f"✅ هذا رابط تخفيض السلة:\n{affiliate_link}")
     except Exception as e:
-        bot.send_message(message.chat.id, f"حدث خطأ 🤷🏻‍♂️: {str(e)}")
+        bot.send_message(message.chat.id, f"⚠️ حدث خطأ 🤷🏻‍♂️: {str(e)}")
 
 @bot.message_handler(func=lambda message: True)
 def handle_links(message):
     link = extract_link(message.text)
     if not link or "aliexpress.com" not in link:
-        bot.send_message(message.chat.id, "الرابط غير صحيح! تأكد من رابط المنتج أو أعد المحاولة.")
+        bot.send_message(message.chat.id, "⚠️ الرابط غير صحيح! تأكد من رابط المنتج أو أعد المحاولة.")
         return
 
     sent = bot.send_message(message.chat.id, "⏳ جاري تجهيز العروض...")
@@ -132,10 +144,9 @@ def send_games(call):
     bot.send_photo(
         call.message.chat.id,
         img_link,
-        caption="روابط ألعاب جمع العملات المعدنية 👇",
+        caption="⭐️ روابط ألعاب جمع العملات المعدنية 👇",
         reply_markup=keyboard_games
     )
 
-# Supprimer le webhook et activer le polling
-bot.remove_webhook()
+# Lancer le bot
 bot.infinity_polling(timeout=10, long_polling_timeout=5)

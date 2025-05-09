@@ -8,6 +8,7 @@ from telebot import types
 from aliexpress_api import AliexpressApi, models
 import re
 import json
+import requests
 from urllib.parse import urlparse, parse_qs, urlencode
 
 TOKEN = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU'
@@ -41,6 +42,14 @@ keyboard_games.add(
     types.InlineKeyboardButton("⭐️ لعبة GoGo Match ⭐️", url="https://s.click.aliexpress.com/e/_DDs7W5D")
 )
 
+def resolve_short_link(short_url):
+    try:
+        response = requests.get(short_url, allow_redirects=True, timeout=10)
+        return response.url
+    except Exception as e:
+        print(f"Erreur lors de la résolution du lien : {e}")
+        return short_url
+
 @bot.message_handler(commands=['start'])
 def welcome_user(message):
     bot.send_message(
@@ -68,20 +77,20 @@ def extract_link(text):
 
 def get_affiliate_links(message, message_id, link):
     try:
-        details = aliexpress.get_products_details([link])
-        if not details or not getattr(details[0], 'product_id', None):
-            bot.delete_message(message.chat.id, message_id)
-            bot.send_message(message.chat.id, "⚠️ لم أتمكن من جلب تفاصيل هذا المنتج. ربما يكون الرابط خاطئًا أو المنتج لم يعد متاحًا.")
-            return
-
-        product = details[0]
-        affiliate_links = aliexpress.get_affiliate_links_by_product_ids([product.product_id])
+        affiliate_links = aliexpress.get_affiliate_links(link)
         if not affiliate_links or not getattr(affiliate_links[0], 'promotion_link', None):
             bot.delete_message(message.chat.id, message_id)
             bot.send_message(message.chat.id, "⚠️ لم أتمكن من جلب رابط العرض لهذا المنتج. تأكد من الرابط وأعد المحاولة.")
             return
 
         promo_link = affiliate_links[0].promotion_link
+        details = aliexpress.get_products_details([link])
+        if not details or not getattr(details[0], 'product_title', None):
+            bot.delete_message(message.chat.id, message_id)
+            bot.send_message(message.chat.id, "⚠️ لم أتمكن من جلب تفاصيل هذا المنتج. ربما يكون الرابط خاطئًا أو المنتج لم يعد متاحًا.")
+            return
+
+        product = details[0]
         bot.delete_message(message.chat.id, message_id)
         bot.send_photo(
             message.chat.id,
@@ -131,6 +140,11 @@ def handle_links(message):
     if not link or "aliexpress.com" not in link:
         bot.send_message(message.chat.id, "⚠️ الرابط غير صحيح! تأكد من رابط المنتج أو أعد المحاولة.")
         return
+
+    # Résoudre les liens courts
+    if "a.aliexpress.com" in link or "s.click.aliexpress.com" in link:
+        link = resolve_short_link(link)
+
     sent = bot.send_message(message.chat.id, "⏳ جاري تجهيز العروض...")
     if "availableProductShopcartIds" in link:
         get_affiliate_shopcart_link(link, message)

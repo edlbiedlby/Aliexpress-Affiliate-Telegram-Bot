@@ -240,6 +240,6 @@ def handle_callback_query(call):
   # In[ ]:
 
 
-keep_alive()
+keep_alive(https://aliexpress-affiliate-telegram-bot-ylj3.onrender.com)
 
 infinity_polling(timeout=10, long_polling_timeout=5)

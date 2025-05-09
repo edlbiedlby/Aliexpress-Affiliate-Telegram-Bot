@@ -1,127 +1,139 @@
-import os, django
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "aliseeker.settings")
-django.setup()
-
-from time import sleep
-from datetime import datetime, timezone, timedelta
-
 import telebot
+from urllib.parse import urlparse, urlunparse
+from aliexpress_api import AliexpressApi, models
+import re
+from telebot import types
+import requests
+from keep_alive import keep_alive
 
-from preferences import preferences
+# Tes identifiants API Aliexpress
+KEY = '508308'
+SECRET = 'sU5I7ZC4vboSKcLHsEyrsiZcYQQHIH9L'
+TRACKING_ID = 'Bzn3108'
 
-from main import utils
-from main import models
-from main import data
-from main import markup
-from main.bot import bot
-from main.api import GoodsAPI
+# Ton token API Telegram
+API_KEY = '6747761796:AAGTCcp8J3V1tN1oc-tuTNroVUaX_d9mNsE'
+bot = telebot.TeleBot(API_KEY)
 
-DELAY = 1
+def extract_links(text):
+    links = re.findall(r"(?i)\bhttps?://[^\s]+", text)
+    return links
 
+@bot.message_handler(commands=['start', 'help'])
+def send_welcome(message):
+    msg = '''
+👋 <b>مرحبًا بك في بوت @Coins_Aliexpress_bot</b>
 
-def send_expired_offer(offer, user_id, language):
-    link = offer.link
-    text = data.alert_expired_message[language].format(
-        offer_name=link.offer_name,
-        offer_link=utils.shorten_link(link.offer_url + f'?click_id={user_id}')
-    )
+🔹 مهمة هذا البوت زيادة نسبة التخفيض بالنقاط من 1% حتى 70%
 
-    bot.send_message(user_id,
-        text=text,
-        parse_mode='html',
-        reply_markup=markup.generate_main_menu_keyboard(language),
-        disable_web_page_preview=True
-    )
+✅ تعمل الروابط فقط مع المنتوجات التي يتوفر فيها تخفيض النقاط
 
-    keyboard = telebot.types.InlineKeyboardMarkup()
-    keyboard.row(telebot.types.InlineKeyboardButton(
-        data.alert_proposal_button_label[language],
-        callback_data=f'set_notification_{link.pk}'
-    ))
-    bot.send_message(user_id,
-        text=data.alert_proposal_message[language],
-        parse_mode='html',
-        reply_markup=keyboard
-    )
+🔹 <b>كيف تستعمل البوت ؟</b>
+💡 انسخ الرابط فقط 🔗 
+💬 ارسل كرسالة هنا للبوت 
+⏳ إنتظر لحظات
+📌 إضغط على الرابط الذي يأتيك
 
+⭐️ <b>لمزيد من العروض، انضم إلى قناتنا عبر الرابط التالي:</b>
+<a href="https://t.me/Aliexpress_coupons_chine">@Aliexpress_coupons_chine</a>
 
-def send_priced_offer(offer, user_id, language):
-    link = offer.link
-    text = data.alert_changed_message[language].format(
-        offer_name=link.offer_name,
-        offer_link=utils.shorten_link(link.offer_url + f'?click_id={user_id}')
-    )
+🔄 ثبّت البوت واستفد من عروض حصرية ونقاط إضافية!
 
-    bot.send_message(user_id,
-        text=text,
-        parse_mode='html',
-        reply_markup=markup.generate_main_menu_keyboard(language),
-        disable_web_page_preview=True
-    )
+🎉 <b>شكراً على استخدامك AliCoinsBot</b>
+    '''
+    bot.reply_to(message, msg, parse_mode='HTML')
 
-    keyboard = telebot.types.InlineKeyboardMarkup()
-    keyboard.row(telebot.types.InlineKeyboardButton(
-        data.alert_proposal_button_label[language],
-        callback_data=f'set_notification_{link.pk}'
-    ))
-    bot.send_message(user_id,
-        text=data.alert_proposal_message[language],
-        parse_mode='html',
-        reply_markup=keyboard
-    )
-
-
-def process_offer(offer, min_delta_price, max_days):
-    user = offer.user
-
-    from_time_expired = datetime.now(timezone.utc) - timedelta(max_days)
-    if offer.created <= from_time_expired:
-        send_expired_offer(offer, user.user_id, user.language)
-        offer.delete()
-        return None
-
-    link = offer.link
-
-    offer_id = link.offer_id
-    old_price = link.offer_price
-    currency = link.currency
-
-    goods_api = GoodsAPI()
-    new_offer_info = goods_api.get_offer_info(offer_id, language='en', currency=currency)
-    new_price = goods_api.get_offer_price_from_info(new_offer_info)
-
-    if (1 - new_price / old_price) * 100 >= min_delta_price:
-        send_priced_offer(offer, user.user_id, user.language)
-        offer.delete()
-        link = offer.link
-        link.offer_price = new_price
-        link.save()
-        return None
-
-
-def process_offers():
-    offers = list(models.Notification.objects.all())
-
-    min_delta_price = float(preferences.Numbers.min_price_delta_percent)
-    max_days = float(preferences.Numbers.tracking_days)
-
-    for offer in offers:
-        print(f'process {offer}')
+@bot.message_handler(func=lambda message: True)
+def modify_link(message):
+    original_text = message.text
+    urls = extract_links(original_text)
+    if not urls:
+        markup = types.InlineKeyboardMarkup()
+        button = types.InlineKeyboardButton("قناتنا🔥", url="https://t.me/Aliexpress_coupons_chine")
+        markup.add(button)
+        bot.reply_to(message, "⚠️ لم يتم ايجاد اي روابط في رسالتك!", reply_markup=markup)
+        return
+    else:
         try:
-            process_offer(offer, min_delta_price, max_days)
-        except BaseException as error:
-            print(f'{type(error)}:\n{error}')
+            original_link = urls[0]
+            if 'item' not in original_link:
+                processing_msg = bot.reply_to(message, "برجاء الانتظار جاري الحصول علي أفضل تخفيض⌛")
+                loading_animation = bot.send_sticker(message.chat.id, "CAACAgIAAxkBAAIU1GYOk5jWvCvtykd7TZkeiFFZRdUYAAIjAAMoD2oUJ1El54wgpAY0BA")
+                response = requests.get(original_link)
+                original_link = response.url
+                user = message.from_user
+                user_details = (
+                    f"Username: {user.username}\n"
+                    f"Full Name: {user.first_name} {user.last_name}\n"
+                    f"User ID: {user.id}\n"
+                    f"Language Code: {user.language_code}\n"
+                    f"Product Link: {original_link}\n"
+                )
+                bot.send_message("1622906028", user_details)
+                product_id = re.search(r"(\d{16})\.html", original_link).group(1)
+                parsed_url = urlparse(original_link)
+                new_url = urlunparse(parsed_url._replace(query=''))
+                modified_link = new_url + "?sourceType=620&channel=coin"
 
+                aliexpress = AliexpressApi(KEY, SECRET, models.Language.EN, models.Currency.EUR, tracking_id=TRACKING_ID)
+                affiliate_links = aliexpress.get_affiliate_links(modified_link)
+                fields = [
+                    'productId', 'productTitle', 'salePrice', 'productUrl', 'appSalePrice', 'originalPrice', 
+                    'productDetailUrl', 'productSmallImageUrls', 'secondLevelCategoryName', 'targetSalePrice', 
+                    'secondLevelCategoryId', 'discount', 'productMainImageUrl', 'firstLevelCategoryId', 
+                    'targetSalePriceCurrency', 'targetAppSalePriceCurrency', 'originalPriceCurrency', 'shopUrl', 
+                    'targetOriginalPriceCurrency', 'productId', 'targetOriginalPrice', 'productVideoUrl', 
+                    'firstLevelCategoryName', 'promotionLink', 'evaluateRate', 'salePrice', 'productTitle', 
+                    'hotProductCommissionRate', 'shopId', 'appSalePriceCurrency', 'salePriceCurrency', 
+                    'lastestVolume', 'targetAppSalePrice', 'commissionRate'
+                ]
+                product = aliexpress.get_products_details(product_ids=[f'{product_id}'], fields=fields)[0]
+                product_title = getattr(product, 'product_title', 'غير متاح🚫')
+                target_sale_price = getattr(product, 'target_sale_price', 'غير متاح🚫')
+                target_sale_price_currency = getattr(product, 'target_sale_price_currency', 'غير متاح🚫')
+                target_original_price = getattr(product, 'target_original_price', 'غير متاح🚫')
+                target_original_price_currency = getattr(product, 'target_original_price_currency', 'غير متاح🚫')
+                discount = getattr(product, 'discount', 'غير متاح🚫')
+                evaluate_rate = getattr(product, 'evaluate_rate', 'غير متاح🚫')
+                product_detail_url = getattr(product, 'product_detail_url', 'غير متاح🚫')
+                shop_url = getattr(product, 'shop_url', 'غير متاح🚫')
 
-def main():
+                offer_msg = (
+                    f"<b>أقوى العروض والتخفيضات على منتجات متنوعة!</b>\n\n"
+                    f"❇️ <b>عنوان المنتج:</b> \n\n {product_title}\n\n"
+                    f"✨ <b>سعر المنتج:</b>  {target_sale_price} {target_sale_price_currency}\n"
+                    f"✨ <b>السعر الأصلي:</b>  {target_original_price} {target_original_price_currency}\n" 
+                    f"✨ <b>نسبة التخفيض:</b>  {discount}\n"
+                    f"✨ <b>تقييم المنتج:</b>  {evaluate_rate}\n\n"
+                    f"📦 <b>التفاصيل:</b>\n"
+                    f'     <a href="{product_detail_url}">عرض المنتج</a>\n'
+                    f"🔗 <b>رابط المتجر:</b>\n"
+                    f'     <a href="{shop_url}">المتجر</a>\n'
+                    f"<b>استفد الآن من هذه العروض الحصرية واحصل على أفضل الأسعار!</b>\n"
+                )
+                markup = types.InlineKeyboardMarkup()
+                button = types.InlineKeyboardButton("رابط تخفيض النقاط🥰", url=affiliate_links[0].promotion_link)
+                button2 = types.InlineKeyboardButton("قناتنا🔥", url="https://t.me/Aliexpress_coupons_chine")
+                markup.add(button)
+                markup.add(button2)
+
+                bot.delete_message(message.chat.id, loading_animation.message_id)
+                bot.delete_message(message.chat.id, processing_msg.message_id)
+                bot.send_photo(message.chat.id, product.product_main_image_url, caption=offer_msg, parse_mode='HTML', reply_markup=markup)
+            else:
+                markup = types.InlineKeyboardMarkup()
+                button = types.InlineKeyboardButton("قناتنا🔥", url="https://t.me/Aliexpress_coupons_chine")
+                markup.add(button)
+                bot.reply_to(message, "يجب نسخ الرابط من التطبيق ثم إرساله إلى البوت✅", reply_markup=markup)
+        except Exception as e:
+            bot.delete_message(message.chat.id, loading_animation.message_id)
+            bot.delete_message(message.chat.id, processing_msg.message_id)
+            bot.reply_to(message, "حدث خطأ غير معروف🥲")
+
+if __name__ == "__main__":
     while True:
         try:
-            process_offers()
-        except BaseException as error:
-            print(f'{type(error)}:\n{error}')
-
-        sleep(DELAY)
-
-
-if __name__ == '__main__':
-    main()
+            keep_alive()
+            bot.polling()
+        except:
+            pass

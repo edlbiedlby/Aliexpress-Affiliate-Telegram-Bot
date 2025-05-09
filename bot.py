@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import telebot
+from flask import Flask
 from telebot import types
 from aliexpress_api import AliexpressApi, models
 import re

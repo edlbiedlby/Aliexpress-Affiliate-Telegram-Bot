@@ -1,64 +1,42 @@
-import requests import hashlib import time import hmac import json import telegram
+import requests
+import telegram
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
-AliExpress API credentials
+BOT_TOKEN = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU'
 
-APP_KEY = '506592' APP_SECRET = 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh' TRACKING_ID = 'default'
+def get_product_name(product_id):
+    url = f'https://api.aliexpress.com/product/{product_id}'
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        return data.get('product_title', 'Produit inconnu'), data.get('sale_price', 'Prix inconnu')
+    else:
+        return 'Erreur', 'Erreur'
 
-Telegram bot token and chat ID
+def start(update, context):
+    update.message.reply_text("Envoie-moi un lien AliExpress, je te donne le nom et le prix !")
 
-TELEGRAM_TOKEN = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU' CHAT_ID = '<TON_CHAT_ID>'  # Remplace par ton chat ID
+def handle_message(update, context):
+    message = update.message.text
+    if 'aliexpress.com' in message:
+        try:
+            product_id = message.split('item/')[1].split('.html')[0]
+            name, price = get_product_name(product_id)
+            affiliate_link = f"https://s.click.aliexpress.com/e/_d{product_id}"
+            reply = f"Nom du produit : {name}\nPrix : {price}\nLien affilié : {affiliate_link}"
+            update.message.reply_text(reply)
+        except Exception as e:
+            update.message.reply_text("Erreur lors du traitement du lien.")
+    else:
+        update.message.reply_text("Envoie-moi un lien AliExpress valide.")
 
-bot = telegram.Bot(token=TELEGRAM_TOKEN)
+def main():
+    updater = Updater(BOT_TOKEN, use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    updater.start_polling()
+    updater.idle()
 
-Function to get product details from AliExpress API
-
-def get_product_details(product_id): api_url = 'https://api.aliexpress.com/v1/product/detail' timestamp = str(int(time.time() * 1000)) sign_str = APP_KEY + timestamp + APP_SECRET sign = hmac.new(APP_SECRET.encode(), sign_str.encode(), hashlib.sha256).hexdigest().upper()
-
-params = {
-    'app_key': APP_KEY,
-    'method': 'aliexpress.affiliate.product.detail.get',
-    'timestamp': timestamp,
-    'sign': sign,
-    'product_id': product_id,
-    'tracking_id': TRACKING_ID,
-    'currency': 'USD',
-    'country': 'CA'  # Canada
-}
-
-response = requests.get(api_url, params=params)
-try:
-    data = response.json()
-    return data['result']
-except Exception as e:
-    print('Error:', e)
-    print('Response:', response.text)
-    return None
-
-Function to generate message
-
-def generate_message(product): message = f"ـ Offer for {product['product_title']}\n" message += f"ـ Current price: {product['sale_price']['amount']} {product['sale_price']['currency']}\n\n"
-
-if 'coupon_link' in product:
-    message += f"🌟 Coupon link: {product['coupon_link']}\n"
-if 'super_deal_link' in product:
-    message += f"🔥 Super Deal link: {product['super_deal_link']}\n"
-if 'limited_offer_link' in product:
-    message += f"🚨 Limited Offer link: {product['limited_offer_link']}\n"
-
-message += f"\n📊 Product rating: {product['evaluate_rate']}\n"
-message += f"➖ Store name: {product['shop_name']}\n"
-message += f"🟠 Store rating: {product['shop_evaluate_rate']}\n"
-
-return message
-
-Main logic
-
-if name == 'main': product_id = '1005006789012345'  # Remplace par l’ID du produit à tester product = get_product_details(product_id)
-
-if product:
-    message = generate_message(product)
-    bot.send_message(chat_id=CHAT_ID, text=message)
-    print('Message sent.')
-else:
-    print('Failed to get product details.')
-
+if __name__ == '__main__':
+    main()

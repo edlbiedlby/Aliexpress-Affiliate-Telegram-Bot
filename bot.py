@@ -80,7 +80,7 @@ def get_affiliate_links(message, message_id, link):
 # Fonction pour extraire les liens
 def extract_link(text):
   link_pattern = r'https?://\S+|www\.\S+'
-  links = re.findall(link_pattern)
+  links = re.findall(link_pattern, text)
   if links:
     return links[0]
 

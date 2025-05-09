@@ -5,14 +5,20 @@ import re
 from telebot import types
 import requests
 from keep_alive import keep_alive
+import time
+from dotenv import load_dotenv
+import os
+
+# Charger les variables d'environnement depuis un fichier .env
+load_dotenv()
 
 # Tes identifiants API Aliexpress
-KEY = '506592'
-SECRET = 'ALIEXPRESS_APP_SECRET=ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh'
+KEY = os.getenv('ALIEXPRESS_APP_KEY')
+SECRET = os.getenv('ALIEXPRESS_APP_SECRET')
 TRACKING_ID = 'default'
 
 # Ton token API Telegram
-API_KEY = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU-tuTNroVUaX_d9mNsE'
+API_KEY = os.getenv('TELEGRAM_API_KEY')
 bot = telebot.TeleBot(API_KEY)
 
 def extract_links(text):
@@ -126,6 +132,7 @@ def modify_link(message):
                 markup.add(button)
                 bot.reply_to(message, "يجب نسخ الرابط من التطبيق ثم إرساله إلى البوت✅", reply_markup=markup)
         except Exception as e:
+            print(f"Une erreur s'est produite : {e}")
             bot.delete_message(message.chat.id, loading_animation.message_id)
             bot.delete_message(message.chat.id, processing_msg.message_id)
             bot.reply_to(message, "حدث خطأ غير معروف🥲")
@@ -133,7 +140,8 @@ def modify_link(message):
 if __name__ == "__main__":
     while True:
         try:
-            keep_alive()
-            bot.polling()
-        except:
-            pass
+            keep_alive()  # Assure-toi que le serveur pour maintenir ton bot en ligne fonctionne correctement.
+            bot.polling(none_stop=True, interval=0)  # Utilise 'none_stop' pour éviter d'arrêter le bot en cas d'erreur.
+        except Exception as e:
+            print(f"Une erreur s'est produite lors du démarrage du bot: {e}")
+            time.sleep(5)  # Attente avant de réessayer après une erreur

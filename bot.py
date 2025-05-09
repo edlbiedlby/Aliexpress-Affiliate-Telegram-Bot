@@ -31,7 +31,7 @@ def webhook():
     return "OK", 200
 
 # Configuration du webhook
-WEBHOOK_URL = 'https://votre-domaine.com/webhook'  # Remplacez par l'URL de votre webhook
+WEBHOOK_URL = 'https://providersmmpro.com/webhook'  # Remplacez par l'URL de votre webhook
 bot.set_webhook(url=WEBHOOK_URL)
 
 # Clavier de démarrage

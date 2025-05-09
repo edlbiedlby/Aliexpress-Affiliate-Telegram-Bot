@@ -20,4 +20,4 @@ requests==2.32.2
 telebot==0.0.5
 urllib3==2.2.1
 Werkzeug==3.0.3
-git+https://github.com/Lyr3x/aliexpress-api.git
+git+https://<TON_TOKEN>@github.com/Lyr3x/aliexpress-api.git

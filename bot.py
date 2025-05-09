@@ -11,7 +11,7 @@ from urllib.parse import urlparse, parse_qs, urlencode
 
 bot = telebot.TeleBot('7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU')
 
-aliexpress = AliexpressApi('506592', 'ALIEXPRESS_APP_SECRET=ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh',
+aliexpress = AliexpressApi('506592', 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh',
                            models.Language.EN, models.Currency.EUR, 'default')
 
 # Clavier de démarrage
@@ -33,13 +33,10 @@ keyboard.add(btn1, btn2, btn3)
 
 # Clavier des jeux
 keyboard_games = types.InlineKeyboardMarkup(row_width=1)
-btn1 = types.InlineKeyboardButton(
-    "⭐️ صفحة مراجعة وجمع النقاط يوميا ⭐️", url="https://s.click.aliexpress.com/e/_on0MwkF")
+btn1 = types.InlineKeyboardButton("⭐️ صفحة مراجعة وجمع النقاط يوميا ⭐️", url="https://s.click.aliexpress.com/e/_on0MwkF")
 btn2 = types.InlineKeyboardButton("⭐️ لعبة Merge boss ⭐️", url="https://s.click.aliexpress.com/e/_DlCyg5Z")
-btn3 = types.InlineKeyboardButton(
-    "⭐️ لعبة Fantastic Farm ⭐️", url="https://s.click.aliexpress.com/e/_DBBkt9V")
-btn4 = types.InlineKeyboardButton(
-    "⭐️ لعبة قلب الاوراق Flip ⭐️", url="https://s.click.aliexpress.com/e/_DdcXZ2r")
+btn3 = types.InlineKeyboardButton("⭐️ لعبة Fantastic Farm ⭐️", url="https://s.click.aliexpress.com/e/_DBBkt9V")
+btn4 = types.InlineKeyboardButton("⭐️ لعبة قلب الاوراق Flip ⭐️", url="https://s.click.aliexpress.com/e/_DdcXZ2r")
 btn5 = types.InlineKeyboardButton("⭐️ لعبة GoGo Match ⭐️", url="https://s.click.aliexpress.com/e/_DDs7W5D")
 keyboard_games.add(btn1, btn2, btn3, btn4, btn5)
 
@@ -73,40 +70,33 @@ def button_click(callback_query):
 # Extraction du lien affilié et des informations du produit
 def get_affiliate_links(message, message_id, link):
     try:
-        limit_links = aliexpress.get_affiliate_links(
-            f'https://star.aliexpress.com/share/share.htm?platform=AE&businessType=ProductDetail&redirectUrl={link}?sourceType=561&aff_fcid='
-        )
+        limit_links = aliexpress.get_affiliate_links(link)
         limit_links = limit_links[0].promotion_link
 
         try:
-            img_link = aliexpress.get_products_details([
-                '1000006468625',
-                f'https://star.aliexpress.com/share/share.htm?platform=AE&businessType=ProductDetail&redirectUrl={link}'
-            ])
-            price_pro = img_link[0].target.sale_price
-            title_link = img_link[0].product_title
-            img_link = img_link[0].product_main_image_url
+            product_details = aliexpress.get_products_details([link])
+            price_pro = product_details[0].target.sale_price
+            title_link = product_details[0].product_title
+            img_link = product_details[0].product_main_image_url
 
             bot.delete_message(message.chat.id, message_id)
             bot.send_photo(message.chat.id,
                            img_link,
                            caption=" \n🛒 منتجك هو  : 🔥 \n"
                            f" {title_link} 🛍 \n"
-                           f"  سعر المنتج  : "
-                           f" {price_pro}  دولار 💵\n"
-                           " \n قارن بين الاسعار واشتري 🔥 \n"
-                           "💰 عرض العملات (السعر النهائي عند الدفع)  : \n"
+                           f"  سعر المنتج  : {price_pro}  دولار 💵\n"
+                           f"\n قارن بين الاسعار واشتري 🔥 \n"
+                           f"💰 عرض العملات (السعر النهائي عند الدفع)  : \n"
                            f"الرابط {limit_links} \n\n"
                            "#AliXPromotion ✅",
                            reply_markup=keyboard)
 
         except:
             bot.delete_message(message.chat.id, message_id)
-            bot.send_message(message.chat.id, "قارن بين الاسعار واشتري 🔥 \n"
-                                             f"💰 عرض العملات (السعر النهائي عند الدفع) : \n"
-                                             f"الرابط {limit_links} \n\n"
-                                             "#AliXPromotion ✅",
-                                             reply_markup=keyboard)
+            bot.send_message(message.chat.id, f"💰 عرض العملات (السعر النهائي عند الدفع) : \n"
+                                              f"الرابط {limit_links} \n\n"
+                                              "#AliXPromotion ✅",
+                             reply_markup=keyboard)
 
     except:
         bot.send_message(message.chat.id, "حدث خطأ 🤷🏻‍♂️")
@@ -123,10 +113,8 @@ def build_shopcart_link(link):
     params = get_url_params(link)
     shop_cart_link = "https://www.aliexpress.com/p/trade/confirm.html?"
     shop_cart_params = {
-        "availableProductShopcartIds":
-        ",".join(params.get("availableProductShopcartIds", [])),
-        "extraParams":
-        json.dumps({"channelInfo": {"sourceType": "620"}}, separators=(',', ':'))
+        "availableProductShopcartIds": ",".join(params.get("availableProductShopcartIds", [])),
+        "extraParams": json.dumps({"channelInfo": {"sourceType": "620"}}, separators=(',', ':'))
     }
     return create_query_string_url(link=shop_cart_link, params=shop_cart_params)
 
@@ -142,11 +130,9 @@ def create_query_string_url(link, params):
 def get_affiliate_shopcart_link(link, message):
     try:
         shopcart_link = build_shopcart_link(link)
-        affiliate_link = aliexpress.get_affiliate_links(
-            shopcart_link)[0].promotion_link
+        affiliate_link = aliexpress.get_affiliate_links(shopcart_link)[0].promotion_link
 
-        text2 = f"هذا رابط تخفيض السلة \n" \
-               f"{str(affiliate_link)}"
+        text2 = f"هذا رابط تخفيض السلة \n{affiliate_link}"
 
         img_link3 = "https://i.postimg.cc/HkMxWS1T/photo-5893070682508606111-y.jpg"
         bot.send_photo(message.chat.id, img_link3, caption=text2)
@@ -154,21 +140,19 @@ def get_affiliate_shopcart_link(link, message):
     except:
         bot.send_message(message.chat.id, "حدث خطأ 🤷🏻‍♂️")
 
-# Gestion du message avec un lien
+# Gestion des messages contenant un lien
 @bot.message_handler(func=lambda message: True)
 def get_link(message):
     link = extract_link(message.text)
 
-    sent_message = bot.send_message(message.chat.id,
-                                    'المرجو الانتظار قليلا، يتم تجهيز العروض ⏳')
+    sent_message = bot.send_message(message.chat.id, 'المرجو الانتظار قليلا، يتم تجهيز العروض ⏳')
     message_id = sent_message.message_id
-    if link and "aliexpress.com" in link and not ("p/shoppingcart"
-                                                  in message.text.lower()):
-        if "availableProductShopcartIds".lower() in message.text.lower():
-            get_affiliate_shopcart_link(link, message)
-            return
-        get_affiliate_links(message, message_id, link)
 
+    if link and "aliexpress.com" in link:
+        if "availableProductShopcartIds" in message.text.lower():
+            get_affiliate_shopcart_link(link, message)
+        else:
+            get_affiliate_links(message, message_id, link)
     else:
         bot.delete_message(message.chat.id, message_id)
         bot.send_message(message.chat.id,

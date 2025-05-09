@@ -21,29 +21,7 @@ aliexpress = AliexpressApi('506592', 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh', models.
 
 
 
-# --- Basic Logging Setup ---
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-logging.getLogger("httpx").setLevel(logging.WARNING)
 
-# --- AliExpress API Configuration ---
-ALIEXPRESS_API_URL = 'https://api-sg.aliexpress.com/sync'
-QUERY_FIELDS = 'product_main_image_url,target_sale_price,product_title,target_sale_price_currency'
-
-# Thread pool for blocking API calls
-executor = ThreadPoolExecutor(max_workers=10)
-
-# --- Cache Configuration ---
-CACHE_EXPIRY_DAYS = 1
-CACHE_EXPIRY_SECONDS = CACHE_EXPIRY_DAYS * 24 * 60 * 60
-
-# --- Environment Variable Validation ---
-if not all([TELEGRAM_BOT_TOKEN, ALIEXPRESS_APP_KEY, ALIEXPRESS_APP_SECRET, ALIEXPRESS_TRACKING_ID]):
-    logger.error("Error: Missing required environment variables. Check TELEGRAM_BOT_TOKEN, ALIEXPRESS_*, TRACKING_ID.")
-    exit()
 
 # --- Initialize AliExpress API Client ---
 try:
@@ -62,14 +40,7 @@ STANDARD_ALIEXPRESS_DOMAIN_REGEX = re.compile(r'https?://(?!a\.|s\.click\.)([\w-
 SHORT_LINK_DOMAIN_REGEX = re.compile(r'https?://(?:s\.click\.aliexpress\.com/e/|a\.aliexpress\.com/_)[a-zA-Z0-9_-]+/?', re.IGNORECASE)
 
 
-# --- Offer Parameter Mapping ---
-OFFER_PARAMS = {
-    "coin": {"name": "🪙 Coin", "params": {"sourceType": "620", "channel": "coin" , "afSmartRedirect": "y"}},
-    "super": {"name": "🔥 Super Deals", "params": {"sourceType": "562", "channel": "sd" , "afSmartRedirect": "y"}},
-    "limited": {"name": "⏳ Limited Offers", "params": {"sourceType": "561", "channel": "limitedoffers" , "afSmartRedirect": "y"}},
-    "bigsave": {"name": "💰 Big Save", "params": {"sourceType": "680", "channel": "bigSave" , "afSmartRedirect": "y"}},
-}
-OFFER_ORDER = ["coin", "super", "limited", "bigsave"]
+
 
 # --- Cache Implementation with Expiry ---
 class CacheWithExpiry:

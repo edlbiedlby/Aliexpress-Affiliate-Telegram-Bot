@@ -136,5 +136,6 @@ def send_games(call):
         reply_markup=keyboard_games
     )
 
-# Lancer le bot
+# Supprimer le webhook et activer le polling
+bot.remove_webhook()
 bot.infinity_polling(timeout=10, long_polling_timeout=5)

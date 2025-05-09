@@ -2,7 +2,13 @@
 
 coding: utf-8
 
-from flask import Flask, request import telebot from telebot import types from aliexpress_api import AliexpressApi, models import re import json from urllib.parse import urlparse, parse_qs, urlencode
+from flask import Flask, request
+import telebot
+from telebot import types
+from aliexpress_api import AliexpressApi, models
+import re
+import json
+from urllib.parse import urlparse, parse_qs, urlencode
 
 TOKEN = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU' bot = telebot.TeleBot(TOKEN) app = Flask(name)
 

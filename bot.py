@@ -241,5 +241,4 @@ def handle_callback_query(call):
 
 
 keep_alive()
-
-infinity_polling(timeout=10, long_polling_timeout=5)
+bot.infinity_polling(timeout=10, long_polling_timeout=5)

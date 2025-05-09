@@ -1,64 +1,68 @@
-import requests import hashlib import time import hmac import json import telegram
+import requests  
+import hashlib  
+import time  
+import hmac  
+import json  
+import telegram  
 
-AliExpress API credentials
+# TES IDENTIFIANTS  
+APP_KEY = '506592'  
+APP_SECRET = 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh'  
+TRACKING_ID = 'default'  
+TELEGRAM_TOKEN = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU'  
 
-APP_KEY = '506592' APP_SECRET = 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh' TRACKING_ID = 'default'
+bot = telegram.Bot(token=TELEGRAM_TOKEN)  
 
-Telegram bot token
+def generate_signature(app_key, secret, params):  
+    sorted_params = ''.join(f'{k}{v}' for k, v in sorted(params.items()))  
+    sign_str = app_key + sorted_params + secret  
+    sign = hmac.new(secret.encode(), sign_str.encode(), hashlib.sha256).hexdigest()  
+    return sign  
 
-TELEGRAM_TOKEN = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU' CHAT_ID = 'YOUR_CHAT_ID'  # Replace with your Telegram user or channel ID
+def get_product_details(product_id):  
+    url = 'https://api.aliexpress.com/v1/product'  
+    params = {  
+        'app_key': APP_KEY,  
+        'method': 'getProductDetails',  
+        'timestamp': str(int(time.time() * 1000)),  
+        'product_id': product_id  
+    }  
+    params['sign'] = generate_signature(APP_KEY, APP_SECRET, params)  
+    response = requests.get(url, params=params)  
+    return response.json()  
 
-bot = telegram.Bot(token=TELEGRAM_TOKEN)
+def build_message(product):  
+    title = product['title']  
+    current_price = product['price']['current']  
+    discount_price = product['price'].get('discount', current_price)  
+    ratings = product['ratings']  
+    store_name = product['store']['name']  
+    store_ratings = product['store']['ratings']  
+    links = product['affiliate_links']  
 
-def get_product_details(product_id): method = 'aliexpress.affiliate.product.detail.get' sign_method = 'sha256' timestamp = str(int(time.time() * 1000))
+    message = f"""  
+ـ **{title}**  
 
-params = {
-    'app_key': APP_KEY,
-    'method': method,
-    'format': 'json',
-    'sign_method': sign_method,
-    'timestamp': timestamp,
-    'v': '2.0',
-    'product_ids': product_id,
-    'target_currency': 'CAD',
-    'target_language': 'EN',
-    'tracking_id': TRACKING_ID
-}
+ـ Current Price: {current_price}$  
+🌟 Discount Link: {discount_price}$  
+{links.get('discount')}  
 
-sorted_params = ''.join(f'{k}{v}' for k, v in sorted(params.items()))
-string_to_sign = APP_SECRET + sorted_params + APP_SECRET
-sign = hmac.new(APP_SECRET.encode('utf-8'), string_to_sign.encode('utf-8'), hashlib.sha256).hexdigest().upper()
+🔥 Super Link: {links.get('super')}  
+🚨 Limited Offer: {links.get('limited')}  
 
-params['sign'] = sign
-response = requests.get('https://api.aliexpress.com/openapi/param2/2/portals.open/api.' + method, params=params)
+📊 Product Ratings: {ratings}  
+➖ Store Name: {store_name}  
+🟠 Store Ratings: {store_ratings}  
+"""  
+    return message  
 
-if response.status_code == 200:
-    data = response.json()
-    if 'result' in data and 'products' in data['result']:
-        return data['result']['products'][0]
-return None
+def send_to_telegram(chat_id, text):  
+    bot.send_message(chat_id=chat_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN)  
 
-def build_affiliate_links(product_id): base = f'https://s.click.aliexpress.com/deep_link.htm?aff_short_key=_9z3fYk&dl_target_url=https://www.aliexpress.com/item/{product_id}.html' discount_link = base + '&aff_platform=promotion' super_deal_link = base + '&aff_platform=super_deals' limited_offer_link = base + '&aff_platform=limited_offer' return discount_link, super_deal_link, limited_offer_link
-
-def send_telegram_message(message): bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=telegram.ParseMode.MARKDOWN)
-
-def main(): product_id = input('Enter AliExpress product ID: ') details = get_product_details(product_id) if not details: print('Failed to get product details.') return
-
-discount_link, super_deal_link, limited_offer_link = build_affiliate_links(product_id)
-
-message = (
-    f"**Product:** {details['product_title']}\n"
-    f"**Current Price (CAD):** {details['sale_price']}\n"
-    f"\n🌟 **Discount Point Link:** {discount_link}\n"
-    f"🔥 **Super Deal Link:** {super_deal_link}\n"
-    f"🚨 **Limited Offer Link:** {limited_offer_link}\n"
-    f"\n📊 **Product Rating:** {details['evaluate_rate']}\n"
-    f"➖ **Store Name:** {details['shop_name']}\n"
-    f"🟠 **Store Rating:** {details['shop_evaluate_rate']}"
-)
-
-send_telegram_message(message)
-print('Message sent to Telegram!')
-
-if name == 'main': main()
-
+# EXEMPLE D’UTILISATION  
+if __name__ == '__main__':  
+    chat_id = 'TON_CHAT_ID'  # Remplace par ton chat ID  
+    product_id = '1005006251633924'  # Remplace par un ID réel  
+    product = get_product_details(product_id)  
+    message = build_message(product)  
+    send_to_telegram(chat_id, message)

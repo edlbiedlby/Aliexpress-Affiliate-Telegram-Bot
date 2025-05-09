@@ -7,12 +7,12 @@ import requests
 from keep_alive import keep_alive
 
 # Tes identifiants API Aliexpress
-KEY = '508308'
-SECRET = 'sU5I7ZC4vboSKcLHsEyrsiZcYQQHIH9L'
-TRACKING_ID = 'Bzn3108'
+KEY = '506592'
+SECRET = 'ALIEXPRESS_APP_SECRET=ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh'
+TRACKING_ID = 'default'
 
 # Ton token API Telegram
-API_KEY = '6747761796:AAGTCcp8J3V1tN1oc-tuTNroVUaX_d9mNsE'
+API_KEY = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU-tuTNroVUaX_d9mNsE'
 bot = telebot.TeleBot(API_KEY)
 
 def extract_links(text):

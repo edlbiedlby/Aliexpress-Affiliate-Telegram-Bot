@@ -68,20 +68,20 @@ def extract_link(text):
 
 def get_affiliate_links(message, message_id, link):
     try:
-        affiliate_links = aliexpress.get_affiliate_links(link)
+        details = aliexpress.get_products_details([link])
+        if not details or not getattr(details[0], 'product_id', None):
+            bot.delete_message(message.chat.id, message_id)
+            bot.send_message(message.chat.id, "⚠️ لم أتمكن من جلب تفاصيل هذا المنتج. ربما يكون الرابط خاطئًا أو المنتج لم يعد متاحًا.")
+            return
+
+        product = details[0]
+        affiliate_links = aliexpress.get_affiliate_links_by_product_ids([product.product_id])
         if not affiliate_links or not getattr(affiliate_links[0], 'promotion_link', None):
             bot.delete_message(message.chat.id, message_id)
             bot.send_message(message.chat.id, "⚠️ لم أتمكن من جلب رابط العرض لهذا المنتج. تأكد من الرابط وأعد المحاولة.")
             return
 
         promo_link = affiliate_links[0].promotion_link
-        details = aliexpress.get_products_details([link])
-        if not details or not getattr(details[0], 'product_title', None):
-            bot.delete_message(message.chat.id, message_id)
-            bot.send_message(message.chat.id, "⚠️ لم أتمكن من جلب تفاصيل هذا المنتج. ربما يكون الرابط خاطئًا أو المنتج لم يعد متاحًا.")
-            return
-
-        product = details[0]
         bot.delete_message(message.chat.id, message_id)
         bot.send_photo(
             message.chat.id,

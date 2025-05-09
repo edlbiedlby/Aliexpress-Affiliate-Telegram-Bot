@@ -1,68 +1,64 @@
-import requests  
-import hashlib  
-import time  
-import hmac  
-import json  
-import telegram  
+import requests import hashlib import time import hmac import json import telegram
 
-# TES IDENTIFIANTS  
-APP_KEY = '506592'  
-APP_SECRET = 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh'  
-TRACKING_ID = 'default'  
-TELEGRAM_TOKEN = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU'  
+AliExpress API credentials
 
-bot = telegram.Bot(token=TELEGRAM_TOKEN)  
+APP_KEY = '506592' APP_SECRET = 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh' TRACKING_ID = 'default'
 
-def generate_signature(app_key, secret, params):  
-    sorted_params = ''.join(f'{k}{v}' for k, v in sorted(params.items()))  
-    sign_str = app_key + sorted_params + secret  
-    sign = hmac.new(secret.encode(), sign_str.encode(), hashlib.sha256).hexdigest()  
-    return sign  
+Telegram bot token and chat ID
 
-def get_product_details(product_id):  
-    url = 'https://api.aliexpress.com/v1/product'  
-    params = {  
-        'app_key': APP_KEY,  
-        'method': 'getProductDetails',  
-        'timestamp': str(int(time.time() * 1000)),  
-        'product_id': product_id  
-    }  
-    params['sign'] = generate_signature(APP_KEY, APP_SECRET, params)  
-    response = requests.get(url, params=params)  
-    return response.json()  
+TELEGRAM_TOKEN = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU' CHAT_ID = '<TON_CHAT_ID>'  # Remplace par ton chat ID
 
-def build_message(product):  
-    title = product['title']  
-    current_price = product['price']['current']  
-    discount_price = product['price'].get('discount', current_price)  
-    ratings = product['ratings']  
-    store_name = product['store']['name']  
-    store_ratings = product['store']['ratings']  
-    links = product['affiliate_links']  
+bot = telegram.Bot(token=TELEGRAM_TOKEN)
 
-    message = f"""  
-ـ **{title}**  
+Function to get product details from AliExpress API
 
-ـ Current Price: {current_price}$  
-🌟 Discount Link: {discount_price}$  
-{links.get('discount')}  
+def get_product_details(product_id): api_url = 'https://api.aliexpress.com/v1/product/detail' timestamp = str(int(time.time() * 1000)) sign_str = APP_KEY + timestamp + APP_SECRET sign = hmac.new(APP_SECRET.encode(), sign_str.encode(), hashlib.sha256).hexdigest().upper()
 
-🔥 Super Link: {links.get('super')}  
-🚨 Limited Offer: {links.get('limited')}  
+params = {
+    'app_key': APP_KEY,
+    'method': 'aliexpress.affiliate.product.detail.get',
+    'timestamp': timestamp,
+    'sign': sign,
+    'product_id': product_id,
+    'tracking_id': TRACKING_ID,
+    'currency': 'USD',
+    'country': 'CA'  # Canada
+}
 
-📊 Product Ratings: {ratings}  
-➖ Store Name: {store_name}  
-🟠 Store Ratings: {store_ratings}  
-"""  
-    return message  
+response = requests.get(api_url, params=params)
+try:
+    data = response.json()
+    return data['result']
+except Exception as e:
+    print('Error:', e)
+    print('Response:', response.text)
+    return None
 
-def send_to_telegram(chat_id, text):  
-    bot.send_message(chat_id=chat_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN)  
+Function to generate message
 
-# EXEMPLE D’UTILISATION  
-if __name__ == '__main__':  
-    chat_id = 'TON_CHAT_ID'  # Remplace par ton chat ID  
-    product_id = '1005006251633924'  # Remplace par un ID réel  
-    product = get_product_details(product_id)  
-    message = build_message(product)  
-    send_to_telegram(chat_id, message)
+def generate_message(product): message = f"ـ Offer for {product['product_title']}\n" message += f"ـ Current price: {product['sale_price']['amount']} {product['sale_price']['currency']}\n\n"
+
+if 'coupon_link' in product:
+    message += f"🌟 Coupon link: {product['coupon_link']}\n"
+if 'super_deal_link' in product:
+    message += f"🔥 Super Deal link: {product['super_deal_link']}\n"
+if 'limited_offer_link' in product:
+    message += f"🚨 Limited Offer link: {product['limited_offer_link']}\n"
+
+message += f"\n📊 Product rating: {product['evaluate_rate']}\n"
+message += f"➖ Store name: {product['shop_name']}\n"
+message += f"🟠 Store rating: {product['shop_evaluate_rate']}\n"
+
+return message
+
+Main logic
+
+if name == 'main': product_id = '1005006789012345'  # Remplace par l’ID du produit à tester product = get_product_details(product_id)
+
+if product:
+    message = generate_message(product)
+    bot.send_message(chat_id=CHAT_ID, text=message)
+    print('Message sent.')
+else:
+    print('Failed to get product details.')
+

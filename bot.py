@@ -11,6 +11,9 @@ from urllib.parse import urlparse, parse_qs, urlencode
 
 bot = telebot.TeleBot('7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU')
 
+# Ajout important pour éviter le conflit webhook / polling :
+bot.remove_webhook()
+
 aliexpress = AliexpressApi('506592', 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh',
                            models.Language.EN, models.Currency.EUR, 'default')
 
@@ -170,4 +173,5 @@ def handle_games_callback(call):
         caption="روابط ألعاب جمع العملات المعدنية لإستعمالها في خفض السعر لبعض المنتجات، قم بالدخول يوميا لها للحصول على أكبر عدد ممكن في اليوم 👇",
         reply_markup=keyboard_games)
 
+# Lancement en mode polling (après avoir retiré tout webhook actif)
 bot.infinity_polling()

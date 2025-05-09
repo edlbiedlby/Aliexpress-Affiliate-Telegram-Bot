@@ -107,7 +107,7 @@ def get_affiliate_links(message, message_id, link):
 def extract_link(text):
     # Regular expression pattern to match links
     link_pattern = r'https?://\S+|www\.\S+'
-    links = re.findall(link_pattern)
+    links = re.findall(link_pattern, text)
     if links:
         return links[0]
     return None
@@ -142,3 +142,4 @@ def keep_alive():
 
 if __name__ == "__main__":
     keep_alive()
+    bot.infinity_polling()

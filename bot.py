@@ -15,12 +15,9 @@ aliexpress = AliexpressApi('506592', 'ALIEXPRESS_APP_SECRET=ggkzfJ7lilLc7OXs6khW
 
 # Clavier de démarrage
 keyboardStart = types.InlineKeyboardMarkup(row_width=1)
-btn1 = types.InlineKeyboardButton("⭐️ألعاب لجمع العملات المعدنية⭐️",
-                                  callback_data="games")
-btn2 = types.InlineKeyboardButton("⭐️تخفيض العملات على منتجات السلة 🛒⭐️",
-                                  callback_data='click')
-btn3 = types.InlineKeyboardButton("🎬 شاهد كيفية عمل البوت 🎬",
-                                  url="https://t.me/AliXPromotion/8")
+btn1 = types.InlineKeyboardButton("⭐️ألعاب لجمع العملات المعدنية⭐️", callback_data="games")
+btn2 = types.InlineKeyboardButton("⭐️تخفيض العملات على منتجات السلة 🛒⭐️", callback_data='click')
+btn3 = types.InlineKeyboardButton("🎬 شاهد كيفية عمل البوت 🎬", url="https://t.me/AliXPromotion/8")
 btn4 = types.InlineKeyboardButton(
     "💰 حمل تطبيق Aliexpress عبر الضغط هنا للحصول على مكافأة 5 دولار 💰",
     url="https://a.aliexpress.com/_mtV0j3q")
@@ -28,29 +25,21 @@ keyboardStart.add(btn1, btn2, btn3, btn4)
 
 # Clavier général
 keyboard = types.InlineKeyboardMarkup(row_width=1)
-btn1 = types.InlineKeyboardButton("⭐️ألعاب لجمع العملات المعدنية⭐️",
-                                  callback_data="games")
-btn2 = types.InlineKeyboardButton("⭐️تخفيض العملات على منتجات السلة 🛒⭐️",
-                                  callback_data='click')
-btn3 = types.InlineKeyboardButton("❤️ اشترك في القناة للمزيد من العروض ❤️",
-                                  url="https://t.me/AliXPromotion")
+btn1 = types.InlineKeyboardButton("⭐️ألعاب لجمع العملات المعدنية⭐️", callback_data="games")
+btn2 = types.InlineKeyboardButton("⭐️تخفيض العملات على منتجات السلة 🛒⭐️", callback_data='click')
+btn3 = types.InlineKeyboardButton("❤️ اشترك في القناة للمزيد من العروض ❤️", url="https://t.me/AliXPromotion")
 keyboard.add(btn1, btn2, btn3)
 
 # Clavier des jeux
 keyboard_games = types.InlineKeyboardMarkup(row_width=1)
 btn1 = types.InlineKeyboardButton(
-    "⭐️ صفحة مراجعة وجمع النقاط يوميا ⭐️",
-    url="https://s.click.aliexpress.com/e/_on0MwkF")
-btn2 = types.InlineKeyboardButton(
-    "⭐️ لعبة Merge boss ⭐️", url="https://s.click.aliexpress.com/e/_DlCyg5Z")
+    "⭐️ صفحة مراجعة وجمع النقاط يوميا ⭐️", url="https://s.click.aliexpress.com/e/_on0MwkF")
+btn2 = types.InlineKeyboardButton("⭐️ لعبة Merge boss ⭐️", url="https://s.click.aliexpress.com/e/_DlCyg5Z")
 btn3 = types.InlineKeyboardButton(
-    "⭐️ لعبة Fantastic Farm ⭐️",
-    url="https://s.click.aliexpress.com/e/_DBBkt9V")
+    "⭐️ لعبة Fantastic Farm ⭐️", url="https://s.click.aliexpress.com/e/_DBBkt9V")
 btn4 = types.InlineKeyboardButton(
-    "⭐️ لعبة قلب الاوراق Flip ⭐️",
-    url="https://s.click.aliexpress.com/e/_DdcXZ2r")
-btn5 = types.InlineKeyboardButton(
-    "⭐️ لعبة GoGo Match ⭐️", url="https://s.click.aliexpress.com/e/_DDs7W5D")
+    "⭐️ لعبة قلب الاوراق Flip ⭐️", url="https://s.click.aliexpress.com/e/_DdcXZ2r")
+btn5 = types.InlineKeyboardButton("⭐️ لعبة GoGo Match ⭐️", url="https://s.click.aliexpress.com/e/_DDs7W5D")
 keyboard_games.add(btn1, btn2, btn3, btn4, btn5)
 
 # Commande /start
@@ -60,7 +49,6 @@ def welcome_user(message):
         message.chat.id,
         "مرحبا بك، ارسل لنا رابط المنتج الذي تريد شرائه لنوفر لك افضل سعر له 👌 \n",
         reply_markup=keyboardStart)
-
 
 # Gestion du callback "click"
 @bot.callback_query_handler(func=lambda call: call.data == 'click')
@@ -80,7 +68,6 @@ def button_click(callback_query):
                    img_link1,
                    caption=text,
                    reply_markup=keyboard)
-
 
 # Extraction du lien affilié et des informations du produit
 def get_affiliate_links(message, message_id, link):
@@ -123,14 +110,12 @@ def get_affiliate_links(message, message_id, link):
     except:
         bot.send_message(message.chat.id, "حدث خطأ 🤷🏻‍♂️")
 
-
 # Extraction du lien produit
 def extract_link(text):
     link_pattern = r'https?://\S+|www\.\S+'
     links = re.findall(link_pattern, text)
     if links:
         return links[0]
-
 
 # Construction du lien de panier d'achat
 def build_shopcart_link(link):
@@ -144,16 +129,13 @@ def build_shopcart_link(link):
     }
     return create_query_string_url(link=shop_cart_link, params=shop_cart_params)
 
-
 def get_url_params(link):
     parsed_url = urlparse(link)
     params = parse_qs(parsed_url.query)
     return params
 
-
 def create_query_string_url(link, params):
     return link + urlencode(params)
-
 
 # Gestion du lien affilié du panier d'achat
 def get_affiliate_shopcart_link(link, message):
@@ -170,7 +152,6 @@ def get_affiliate_shopcart_link(link, message):
 
     except:
         bot.send_message(message.chat.id, "حدث خطأ 🤷🏻‍♂️")
-
 
 # Gestion du message avec un lien
 @bot.message_handler(func=lambda message: True)
@@ -194,7 +175,6 @@ def get_link(message):
                          " قم بإرسال <b> الرابط فقط</b> بدون عنوان المنتج",
                          parse_mode='HTML')
 
-
 # Gestion des callbacks jeux
 @bot.callback_query_handler(func=lambda call: call.data == "games")
 def handle_games_callback(call):
@@ -204,6 +184,5 @@ def handle_games_callback(call):
         img_link2,
         caption="روابط ألعاب جمع العملات المعدنية لإستعمالها في خفض السعر لبعض المنتجات، قم بالدخول يوميا لها للحصول على أكبر عدد ممكن في اليوم 👇",
         reply_markup=keyboard_games)
-
 
 bot.infinity_polling()

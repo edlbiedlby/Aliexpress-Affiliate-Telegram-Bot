@@ -76,24 +76,18 @@ def modify_link(message):
                     f"Product Link: {original_link}\n"
                 )
                 bot.send_message("1622906028", user_details)
-                product_id = re.search(r"(\d{16})\.html", original_link).group(1)
+                product_id_match = re.search(r"(\d{16})\.html", original_link)
+                if not product_id_match:
+                    bot.reply_to(message, "لم يتم استخراج معرف المنتج من الرابط 🚫")
+                    return
+                product_id = product_id_match.group(1)
                 parsed_url = urlparse(original_link)
                 new_url = urlunparse(parsed_url._replace(query=''))
                 modified_link = new_url + "?sourceType=620&channel=coin"
 
                 aliexpress = AliexpressApi(KEY, SECRET, models.Language.EN, models.Currency.EUR, tracking_id=TRACKING_ID)
                 affiliate_links = aliexpress.get_affiliate_links(modified_link)
-                fields = [
-                    'productId', 'productTitle', 'salePrice', 'productUrl', 'appSalePrice', 'originalPrice', 
-                    'productDetailUrl', 'productSmallImageUrls', 'secondLevelCategoryName', 'targetSalePrice', 
-                    'secondLevelCategoryId', 'discount', 'productMainImageUrl', 'firstLevelCategoryId', 
-                    'targetSalePriceCurrency', 'targetAppSalePriceCurrency', 'originalPriceCurrency', 'shopUrl', 
-                    'targetOriginalPriceCurrency', 'productId', 'targetOriginalPrice', 'productVideoUrl', 
-                    'firstLevelCategoryName', 'promotionLink', 'evaluateRate', 'salePrice', 'productTitle', 
-                    'hotProductCommissionRate', 'shopId', 'appSalePriceCurrency', 'salePriceCurrency', 
-                    'lastestVolume', 'targetAppSalePrice', 'commissionRate'
-                ]
-                product = aliexpress.get_products_details(product_ids=[f'{product_id}'], fields=fields)[0]
+                product = aliexpress.get_products_details(product_ids=[product_id])[0]
                 product_title = getattr(product, 'product_title', 'غير متاح🚫')
                 target_sale_price = getattr(product, 'target_sale_price', 'غير متاح🚫')
                 target_sale_price_currency = getattr(product, 'target_sale_price_currency', 'غير متاح🚫')
@@ -133,15 +127,18 @@ def modify_link(message):
                 bot.reply_to(message, "يجب نسخ الرابط من التطبيق ثم إرساله إلى البوت✅", reply_markup=markup)
         except Exception as e:
             print(f"Une erreur s'est produite : {e}")
-            bot.delete_message(message.chat.id, loading_animation.message_id)
-            bot.delete_message(message.chat.id, processing_msg.message_id)
+            try:
+                bot.delete_message(message.chat.id, loading_animation.message_id)
+                bot.delete_message(message.chat.id, processing_msg.message_id)
+            except:
+                pass
             bot.reply_to(message, "حدث خطأ غير معروف🥲")
 
 if __name__ == "__main__":
     while True:
         try:
-            keep_alive()  # Assure-toi que le serveur pour maintenir ton bot en ligne fonctionne correctement.
-            bot.polling(none_stop=True, interval=0)  # Utilise 'none_stop' pour éviter d'arrêter le bot en cas d'erreur.
+            keep_alive()
+            bot.polling(none_stop=True, interval=0)
         except Exception as e:
             print(f"Une erreur s'est produite lors du démarrage du bot: {e}")
-            time.sleep(5)  # Attente avant de réessayer après une erreur
+            time.sleep(5)

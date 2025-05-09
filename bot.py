@@ -11,7 +11,6 @@ from urllib.parse import urlparse, parse_qs, urlencode
 
 TOKEN = '7925683283:AAG2QUVayxeCE_gS70OdOm79dOFwWDqPvlU'
 bot = telebot.TeleBot(TOKEN)
-app = Flask(__name__)
 
 aliexpress = AliexpressApi('506592', 'ggkzfJ7lilLc7OXs6khWfT4qTZdZuJbh',
                            models.Language.EN, models.Currency.EUR, 'default')
@@ -144,19 +143,6 @@ def send_games(call):
         reply_markup=keyboard_games
     )
 
-# Flask webhook
-@app.route('/' + TOKEN, methods=['POST'])
-def getMessage():
-    json_str = request.get_data().decode('UTF-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return '!', 200
-
-@app.route('/')
-def index():
-    return 'Bot is running!', 200
-
 if __name__ == "__main__":
     bot.remove_webhook()
-    bot.set_webhook(url='https://TON-APP-NAME.onrender.com/' + TOKEN)
-    app.run(host="0.0.0.0", port=10000)
+    bot.infinity_polling()
